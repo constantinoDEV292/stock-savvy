@@ -7,15 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search } from 'lucide-react';
 
 export default function Historico() {
-  const { movimentacoes } = useStock();
+  const { movimentacoes, produtos } = useStock();
   const [search, setSearch] = useState('');
   const [tipoFilter, setTipoFilter] = useState<string>('all');
   const [deptFilter, setDeptFilter] = useState<string>('all');
 
+  const produtoNomes = Object.fromEntries(produtos.map(p => [p.id, p.nome]));
   const departamentos = [...new Set(movimentacoes.map(m => m.departamento))];
 
   const filtered = movimentacoes.filter(m => {
-    const matchSearch = m.produto_nome.toLowerCase().includes(search.toLowerCase()) ||
+    const nome = produtoNomes[m.produto_id] ?? '';
+    const matchSearch = nome.toLowerCase().includes(search.toLowerCase()) ||
       m.responsavel.toLowerCase().includes(search.toLowerCase());
     const matchTipo = tipoFilter === 'all' || m.tipo === tipoFilter;
     const matchDept = deptFilter === 'all' || m.departamento === deptFilter;
@@ -29,7 +31,6 @@ export default function Historico() {
         <p className="text-sm text-muted-foreground">Registo completo de movimentações</p>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -71,9 +72,9 @@ export default function Historico() {
                 {filtered.map(m => (
                   <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(m.data).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.created_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-4 py-3 font-medium">{m.produto_nome}</td>
+                    <td className="px-4 py-3 font-medium">{produtoNomes[m.produto_id] ?? '—'}</td>
                     <td className="px-4 py-3">
                       <Badge variant={m.tipo === 'entrada' ? 'default' : 'secondary'} className={m.tipo === 'entrada' ? 'bg-success text-success-foreground' : 'bg-warning/15 text-warning'}>
                         {m.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
@@ -86,16 +87,13 @@ export default function Historico() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhuma movimentação encontrada</td>
-                  </tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhuma movimentação encontrada</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
-
       <p className="text-xs text-muted-foreground">{filtered.length} movimentação(ões) encontrada(s)</p>
     </div>
   );

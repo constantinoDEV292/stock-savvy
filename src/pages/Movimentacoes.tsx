@@ -19,8 +19,9 @@ export default function Movimentacoes() {
 
   const [saidaForm, setSaidaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '' });
   const [entradaForm, setEntradaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '' });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSaida = (e: React.FormEvent) => {
+  const handleSaida = async (e: React.FormEvent) => {
     e.preventDefault();
     const produto = produtosAtivos.find(p => p.id === saidaForm.produto_id);
     if (!produto) return;
@@ -28,44 +29,46 @@ export default function Movimentacoes() {
       toast({ title: 'Erro', description: 'Quantidade maior que o stock disponível', variant: 'destructive' });
       return;
     }
-    if (saidaForm.quantidade <= 0) {
-      toast({ title: 'Erro', description: 'Quantidade deve ser positiva', variant: 'destructive' });
-      return;
+    setSubmitting(true);
+    try {
+      await addMovimentacao({
+        produto_id: saidaForm.produto_id,
+        tipo: 'saida',
+        quantidade: saidaForm.quantidade,
+        responsavel: saidaForm.responsavel,
+        departamento: saidaForm.departamento,
+        motivo: saidaForm.motivo,
+      });
+      toast({ title: '✅ Saída registada', description: `${saidaForm.quantidade}x ${produto.nome}` });
+      setSaidaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '' });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
-    addMovimentacao({
-      produto_id: saidaForm.produto_id,
-      produto_nome: produto.nome,
-      tipo: 'saida',
-      quantidade: saidaForm.quantidade,
-      responsavel: saidaForm.responsavel,
-      departamento: saidaForm.departamento,
-      motivo: saidaForm.motivo,
-    });
-    toast({ title: '✅ Saída registada', description: `${saidaForm.quantidade}x ${produto.nome}` });
-    setSaidaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '' });
+    setSubmitting(false);
   };
 
-  const handleEntrada = (e: React.FormEvent) => {
+  const handleEntrada = async (e: React.FormEvent) => {
     e.preventDefault();
     const produto = produtosAtivos.find(p => p.id === entradaForm.produto_id);
     if (!produto) return;
-    if (entradaForm.quantidade <= 0) {
-      toast({ title: 'Erro', description: 'Quantidade deve ser positiva', variant: 'destructive' });
-      return;
+    setSubmitting(true);
+    try {
+      await addMovimentacao({
+        produto_id: entradaForm.produto_id,
+        tipo: 'entrada',
+        quantidade: entradaForm.quantidade,
+        responsavel: entradaForm.responsavel,
+        departamento: entradaForm.departamento,
+        motivo: 'Reposição',
+        fornecedor: entradaForm.fornecedor || null,
+        nota: entradaForm.nota || null,
+      });
+      toast({ title: '✅ Entrada registada', description: `${entradaForm.quantidade}x ${produto.nome}` });
+      setEntradaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '' });
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
-    addMovimentacao({
-      produto_id: entradaForm.produto_id,
-      produto_nome: produto.nome,
-      tipo: 'entrada',
-      quantidade: entradaForm.quantidade,
-      responsavel: entradaForm.responsavel,
-      departamento: entradaForm.departamento,
-      motivo: 'Reposição',
-      fornecedor: entradaForm.fornecedor || undefined,
-      nota: entradaForm.nota || undefined,
-    });
-    toast({ title: '✅ Entrada registada', description: `${entradaForm.quantidade}x ${produto.nome}` });
-    setEntradaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '' });
+    setSubmitting(false);
   };
 
   const selectedSaidaProduto = produtosAtivos.find(p => p.id === saidaForm.produto_id);
@@ -85,9 +88,7 @@ export default function Movimentacoes() {
 
         <TabsContent value="saida">
           <Card className="industrial-shadow max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg">📤 Registo de Saída</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">📤 Registo de Saída</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleSaida} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -102,9 +103,7 @@ export default function Movimentacoes() {
                       </SelectContent>
                     </Select>
                     {selectedSaidaProduto && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Stock disponível: <span className="font-mono font-semibold">{selectedSaidaProduto.quantidade}</span>
-                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">Stock disponível: <span className="font-mono font-semibold">{selectedSaidaProduto.quantidade}</span></p>
                     )}
                   </div>
                   <div>
@@ -119,23 +118,19 @@ export default function Movimentacoes() {
                     <Label>Departamento</Label>
                     <Select value={saidaForm.departamento} onValueChange={v => setSaidaForm(p => ({ ...p, departamento: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        {departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                      </SelectContent>
+                      <SelectContent>{departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label>Motivo</Label>
                     <Select value={saidaForm.motivo} onValueChange={v => setSaidaForm(p => ({ ...p, motivo: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        {motivos.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                      </SelectContent>
+                      <SelectContent>{motivos.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={!saidaForm.produto_id || !saidaForm.responsavel || !saidaForm.departamento || !saidaForm.motivo}>
-                  Confirmar Saída
+                <Button type="submit" className="w-full" disabled={submitting || !saidaForm.produto_id || !saidaForm.responsavel || !saidaForm.departamento || !saidaForm.motivo}>
+                  {submitting ? 'A processar...' : 'Confirmar Saída'}
                 </Button>
               </form>
             </CardContent>
@@ -144,9 +139,7 @@ export default function Movimentacoes() {
 
         <TabsContent value="entrada">
           <Card className="industrial-shadow max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg">📥 Registo de Entrada</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">📥 Registo de Entrada</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleEntrada} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -173,9 +166,7 @@ export default function Movimentacoes() {
                     <Label>Departamento</Label>
                     <Select value={entradaForm.departamento} onValueChange={v => setEntradaForm(p => ({ ...p, departamento: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        {departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                      </SelectContent>
+                      <SelectContent>{departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
@@ -187,8 +178,8 @@ export default function Movimentacoes() {
                     <Input value={entradaForm.nota} onChange={e => setEntradaForm(p => ({ ...p, nota: e.target.value }))} />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={!entradaForm.produto_id || !entradaForm.responsavel || !entradaForm.departamento}>
-                  Confirmar Entrada
+                <Button type="submit" className="w-full" disabled={submitting || !entradaForm.produto_id || !entradaForm.responsavel || !entradaForm.departamento}>
+                  {submitting ? 'A processar...' : 'Confirmar Entrada'}
                 </Button>
               </form>
             </CardContent>
