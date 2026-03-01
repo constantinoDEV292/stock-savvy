@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStock } from '@/contexts/StockContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -9,16 +10,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Edit2 } from 'lucide-react';
-import { Categoria, Produto } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-const categorias: Categoria[] = ['Equipamento', 'Material', 'Peça'];
+type Produto = Tables<'produtos'>;
+
+const categorias = ['Equipamento', 'Material', 'Peça'];
 const localizacoes = ['Armazém A', 'Armazém B', 'Armazém C'];
 
 function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: (data: any) => void; onClose: () => void }) {
   const [form, setForm] = useState({
     nome: produto?.nome || '',
-    categoria: produto?.categoria || 'Material' as Categoria,
+    categoria: produto?.categoria || 'Material',
     codigo: produto?.codigo || '',
     quantidade: produto?.quantidade ?? 0,
     quantidade_minima: produto?.quantidade_minima ?? 5,
@@ -47,11 +50,9 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
         </div>
         <div>
           <Label>Categoria</Label>
-          <Select value={form.categoria} onValueChange={v => setForm(p => ({ ...p, categoria: v as Categoria }))}>
+          <Select value={form.categoria} onValueChange={v => setForm(p => ({ ...p, categoria: v }))}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
+            <SelectContent>{categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>
@@ -66,9 +67,7 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Localização</Label>
           <Select value={form.localizacao} onValueChange={v => setForm(p => ({ ...p, localizacao: v }))}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {localizacoes.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-            </SelectContent>
+            <SelectContent>{localizacoes.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="col-span-2">
@@ -86,11 +85,14 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
 
 export default function Produtos() {
   const { produtos, addProduto, updateProduto } = useStock();
+  const { role } = useAuth();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduto, setEditProduto] = useState<Produto | undefined>();
   const { toast } = useToast();
+
+  const isAdmin = role === 'admin';
 
   const filtered = produtos.filter(p => {
     const matchSearch = p.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -99,13 +101,17 @@ export default function Produtos() {
     return matchSearch && matchCat;
   });
 
-  const handleSave = (data: any) => {
-    if (editProduto) {
-      updateProduto(editProduto.id, data);
-      toast({ title: 'Produto atualizado com sucesso' });
-    } else {
-      addProduto(data);
-      toast({ title: 'Produto cadastrado com sucesso' });
+  const handleSave = async (data: any) => {
+    try {
+      if (editProduto) {
+        await updateProduto(editProduto.id, data);
+        toast({ title: 'Produto atualizado com sucesso' });
+      } else {
+        await addProduto(data);
+        toast({ title: 'Produto cadastrado com sucesso' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
     setEditProduto(undefined);
   };
@@ -127,20 +133,21 @@ export default function Produtos() {
           <h1 className="text-2xl font-bold">Produtos</h1>
           <p className="text-sm text-muted-foreground">Gestão de equipamentos e materiais</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Novo Produto</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
-            </DialogHeader>
-            <ProdutoForm produto={editProduto} onSave={handleSave} onClose={() => setDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        {isAdmin && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Novo Produto</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
+              </DialogHeader>
+              <ProdutoForm produto={editProduto} onSave={handleSave} onClose={() => setDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -155,7 +162,6 @@ export default function Produtos() {
         </Select>
       </div>
 
-      {/* Table */}
       <Card className="industrial-shadow">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -169,7 +175,7 @@ export default function Produtos() {
                   <th className="px-4 py-3">Mínimo</th>
                   <th className="px-4 py-3">Local</th>
                   <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3"></th>
+                  {isAdmin && <th className="px-4 py-3"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -179,13 +185,9 @@ export default function Produtos() {
                     <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs">{p.codigo}</td>
                       <td className="px-4 py-3 font-medium">{p.nome}</td>
+                      <td className="px-4 py-3"><Badge variant="outline">{p.categoria}</Badge></td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline">{p.categoria}</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-mono font-semibold ${lowStock ? 'text-destructive' : ''}`}>
-                          {p.quantidade}
-                        </span>
+                        <span className={`font-mono font-semibold ${lowStock ? 'text-destructive' : ''}`}>{p.quantidade}</span>
                       </td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">{p.quantidade_minima}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.localizacao}</td>
@@ -198,14 +200,17 @@ export default function Produtos() {
                           <Badge className="bg-success text-success-foreground">Normal</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </td>
+                      {isAdmin && (
+                        <td className="px-4 py-3">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado</td></tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
-  const { produtos, movimentacoes, produtosStockBaixo, totalItens } = useStock();
+  const { produtos, movimentacoes, produtosStockBaixo, totalItens, loading } = useStock();
 
   const produtosAtivos = produtos.filter(p => p.ativo);
   const entradas = movimentacoes.filter(m => m.tipo === 'entrada');
@@ -24,6 +24,13 @@ export default function Dashboard() {
     { label: 'Saídas (mês)', value: saidas.length, icon: ArrowDownRight, color: 'text-warning' },
   ];
 
+  // Build a lookup for product names
+  const produtoNomes = Object.fromEntries(produtos.map(p => [p.id, p.nome]));
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">A carregar...</p></div>;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -31,7 +38,6 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">Visão geral do stock da fábrica</p>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map(kpi => (
           <Card key={kpi.label} className="industrial-shadow">
@@ -49,7 +55,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Chart */}
         <Card className="industrial-shadow lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Movimentações Mensais</CardTitle>
@@ -61,14 +66,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: 12,
-                    }}
-                  />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
                   <Bar dataKey="entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="Entradas" />
                   <Bar dataKey="saidas" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} name="Saídas" />
                 </BarChart>
@@ -77,7 +75,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Alerts */}
         <Card className="industrial-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -95,11 +92,7 @@ export default function Dashboard() {
                     <p className="text-sm font-medium">{p.nome}</p>
                     <p className="font-mono text-xs text-muted-foreground">{p.codigo}</p>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="destructive" className="text-xs">
-                      {p.quantidade}/{p.quantidade_minima}
-                    </Badge>
-                  </div>
+                  <Badge variant="destructive" className="text-xs">{p.quantidade}/{p.quantidade_minima}</Badge>
                 </div>
               ))
             )}
@@ -107,7 +100,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Recent Movements */}
       <Card className="industrial-shadow">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Últimas Movimentações</CardTitle>
@@ -128,7 +120,7 @@ export default function Dashboard() {
               <tbody>
                 {movimentacoes.slice(0, 8).map(m => (
                   <tr key={m.id} className="border-b last:border-0">
-                    <td className="py-2.5 pr-4 font-medium">{m.produto_nome}</td>
+                    <td className="py-2.5 pr-4 font-medium">{produtoNomes[m.produto_id] ?? '—'}</td>
                     <td className="py-2.5 pr-4">
                       <Badge variant={m.tipo === 'entrada' ? 'default' : 'secondary'} className={m.tipo === 'entrada' ? 'bg-success text-success-foreground' : 'bg-warning/15 text-warning'}>
                         {m.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
@@ -138,10 +130,13 @@ export default function Dashboard() {
                     <td className="py-2.5 pr-4">{m.responsavel}</td>
                     <td className="py-2.5 pr-4 text-muted-foreground">{m.departamento}</td>
                     <td className="py-2.5 font-mono text-xs text-muted-foreground">
-                      {new Date(m.data).toLocaleDateString('pt-PT')}
+                      {new Date(m.created_at).toLocaleDateString('pt-PT')}
                     </td>
                   </tr>
                 ))}
+                {movimentacoes.length === 0 && (
+                  <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhuma movimentação registada</td></tr>
+                )}
               </tbody>
             </table>
           </div>
