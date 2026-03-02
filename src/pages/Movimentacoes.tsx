@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStock } from '@/contexts/StockContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,16 +10,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const departamentos = ['Produção', 'Manutenção', 'Compras', 'Logística', 'Qualidade'];
-const motivos = ['Uso produção', 'Manutenção preventiva', 'Manutenção corretiva', 'Substituição', 'Perda', 'Reposição', 'Compra'];
+const motivos = ['Uso produção', 'Manutenção preventiva', 'Manutenção corretiva', 'Substituição', 'Perda', 'Reposição', 'Compra', 'Outro'];
 
 export default function Movimentacoes() {
   const { produtos, addMovimentacao } = useStock();
   const { toast } = useToast();
   const produtosAtivos = produtos.filter(p => p.ativo);
 
-  const [saidaForm, setSaidaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '' });
-  const [entradaForm, setEntradaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '' });
+  const [departamentos, setDepartamentos] = useState<{ id: string; nome: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('departamentos').select('id, nome').order('nome').then(({ data }) => {
+      if (data) setDepartamentos(data);
+    });
+  }, []);
+
+  const [saidaForm, setSaidaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '', motivo_outro: '', responsavel_recebeu: '' });
+  const [entradaForm, setEntradaForm] = useState({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '', responsavel_recebeu: '' });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSaida = async (e: React.FormEvent) => {
@@ -31,16 +39,18 @@ export default function Movimentacoes() {
     }
     setSubmitting(true);
     try {
+      const motivo = saidaForm.motivo === 'Outro' ? saidaForm.motivo_outro : saidaForm.motivo;
       await addMovimentacao({
         produto_id: saidaForm.produto_id,
         tipo: 'saida',
         quantidade: saidaForm.quantidade,
         responsavel: saidaForm.responsavel,
         departamento: saidaForm.departamento,
-        motivo: saidaForm.motivo,
+        motivo,
+        responsavel_recebeu: saidaForm.responsavel_recebeu || null,
       });
       toast({ title: '✅ Saída registada', description: `${saidaForm.quantidade}x ${produto.nome}` });
-      setSaidaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '' });
+      setSaidaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', motivo: '', motivo_outro: '', responsavel_recebeu: '' });
     } catch (err: any) {
       toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
@@ -62,9 +72,10 @@ export default function Movimentacoes() {
         motivo: 'Reposição',
         fornecedor: entradaForm.fornecedor || null,
         nota: entradaForm.nota || null,
+        responsavel_recebeu: entradaForm.responsavel_recebeu || null,
       });
       toast({ title: '✅ Entrada registada', description: `${entradaForm.quantidade}x ${produto.nome}` });
-      setEntradaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '' });
+      setEntradaForm({ produto_id: '', quantidade: 1, responsavel: '', departamento: '', fornecedor: '', nota: '', responsavel_recebeu: '' });
     } catch (err: any) {
       toast({ title: 'Erro', description: err.message, variant: 'destructive' });
     }
@@ -111,25 +122,35 @@ export default function Movimentacoes() {
                     <Input type="number" min={1} max={selectedSaidaProduto?.quantidade} value={saidaForm.quantidade} onChange={e => setSaidaForm(p => ({ ...p, quantidade: Number(e.target.value) }))} required />
                   </div>
                   <div>
-                    <Label>Responsável</Label>
+                    <Label>Responsável (quem entrega)</Label>
                     <Input value={saidaForm.responsavel} onChange={e => setSaidaForm(p => ({ ...p, responsavel: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label>Responsável (quem recebe)</Label>
+                    <Input value={saidaForm.responsavel_recebeu} onChange={e => setSaidaForm(p => ({ ...p, responsavel_recebeu: e.target.value }))} placeholder="Opcional" />
                   </div>
                   <div>
                     <Label>Departamento</Label>
                     <Select value={saidaForm.departamento} onValueChange={v => setSaidaForm(p => ({ ...p, departamento: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>{departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                      <SelectContent>{departamentos.map(d => <SelectItem key={d.id} value={d.nome}>{d.nome}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label>Motivo</Label>
-                    <Select value={saidaForm.motivo} onValueChange={v => setSaidaForm(p => ({ ...p, motivo: v }))}>
+                    <Select value={saidaForm.motivo} onValueChange={v => setSaidaForm(p => ({ ...p, motivo: v, motivo_outro: v !== 'Outro' ? '' : p.motivo_outro }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                       <SelectContent>{motivos.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  {saidaForm.motivo === 'Outro' && (
+                    <div className="col-span-2">
+                      <Label>Especifique o motivo</Label>
+                      <Input value={saidaForm.motivo_outro} onChange={e => setSaidaForm(p => ({ ...p, motivo_outro: e.target.value }))} required placeholder="Descreva o motivo..." />
+                    </div>
+                  )}
                 </div>
-                <Button type="submit" className="w-full" disabled={submitting || !saidaForm.produto_id || !saidaForm.responsavel || !saidaForm.departamento || !saidaForm.motivo}>
+                <Button type="submit" className="w-full" disabled={submitting || !saidaForm.produto_id || !saidaForm.responsavel || !saidaForm.departamento || !saidaForm.motivo || (saidaForm.motivo === 'Outro' && !saidaForm.motivo_outro)}>
                   {submitting ? 'A processar...' : 'Confirmar Saída'}
                 </Button>
               </form>
@@ -159,14 +180,18 @@ export default function Movimentacoes() {
                     <Input type="number" min={1} value={entradaForm.quantidade} onChange={e => setEntradaForm(p => ({ ...p, quantidade: Number(e.target.value) }))} required />
                   </div>
                   <div>
-                    <Label>Responsável</Label>
+                    <Label>Responsável (quem entrega)</Label>
                     <Input value={entradaForm.responsavel} onChange={e => setEntradaForm(p => ({ ...p, responsavel: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label>Responsável (quem recebe)</Label>
+                    <Input value={entradaForm.responsavel_recebeu} onChange={e => setEntradaForm(p => ({ ...p, responsavel_recebeu: e.target.value }))} placeholder="Opcional" />
                   </div>
                   <div>
                     <Label>Departamento</Label>
                     <Select value={entradaForm.departamento} onValueChange={v => setEntradaForm(p => ({ ...p, departamento: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>{departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                      <SelectContent>{departamentos.map(d => <SelectItem key={d.id} value={d.nome}>{d.nome}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>

@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Produtos from "@/pages/Produtos";
 import Movimentacoes from "@/pages/Movimentacoes";
 import Historico from "@/pages/Historico";
+import Departamentos from "@/pages/Departamentos";
 import Auth from "@/pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ function ProtectedRoutes() {
           <Route path="/produtos" element={<Produtos />} />
           <Route path="/movimentacoes" element={<Movimentacoes />} />
           <Route path="/historico" element={<Historico />} />
+          <Route path="/departamentos" element={<Departamentos />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
