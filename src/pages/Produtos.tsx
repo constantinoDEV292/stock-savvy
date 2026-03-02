@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStock } from '@/contexts/StockContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Edit2 } from 'lucide-react';
+import { Plus, Search, Edit2, Upload, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import type { Tables } from '@/integrations/supabase/types';
 
 type Produto = Tables<'produtos'>;
 
-const categorias = ['Equipamento', 'Material', 'Peça'];
-const localizacoes = ['Armazém A', 'Armazém B', 'Armazém C'];
+const categorias = ['Equipamento', 'Material', 'Peça', 'Alimento', 'Outros'];
 
 function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: (data: any) => void; onClose: () => void }) {
   const [form, setForm] = useState({
@@ -25,15 +25,32 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
     codigo: produto?.codigo || '',
     quantidade: produto?.quantidade ?? 0,
     quantidade_minima: produto?.quantidade_minima ?? 5,
-    localizacao: produto?.localizacao || 'Armazém A',
+    localizacao: produto?.localizacao || '',
     observacoes: produto?.observacoes || '',
     ativo: produto?.ativo ?? true,
   });
+  const [foto, setFoto] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nome.trim() || !form.codigo.trim()) return;
-    onSave(form);
+
+    let foto_url = (produto as any)?.foto_url || null;
+
+    if (foto) {
+      setUploading(true);
+      const ext = foto.name.split('.').pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('product-photos').upload(path, foto);
+      if (!error) {
+        const { data: urlData } = supabase.storage.from('product-photos').getPublicUrl(path);
+        foto_url = urlData.publicUrl;
+      }
+      setUploading(false);
+    }
+
+    onSave({ ...form, foto_url });
     onClose();
   };
 
@@ -63,21 +80,31 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Quantidade Mínima</Label>
           <Input type="number" min={0} value={form.quantidade_minima} onChange={e => setForm(p => ({ ...p, quantidade_minima: Number(e.target.value) }))} />
         </div>
-        <div>
+        <div className="col-span-2">
           <Label>Localização</Label>
-          <Select value={form.localizacao} onValueChange={v => setForm(p => ({ ...p, localizacao: v }))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{localizacoes.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-          </Select>
+          <Textarea value={form.localizacao} onChange={e => setForm(p => ({ ...p, localizacao: e.target.value }))} rows={2} placeholder="Descreva a localização do produto..." />
         </div>
         <div className="col-span-2">
           <Label>Observações</Label>
           <Textarea value={form.observacoes} onChange={e => setForm(p => ({ ...p, observacoes: e.target.value }))} rows={2} />
         </div>
+        <div className="col-span-2">
+          <Label>Foto do Produto (opcional)</Label>
+          <div className="flex items-center gap-3 mt-1">
+            <label className="flex items-center gap-2 cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors">
+              <Upload className="h-4 w-4" />
+              {foto ? foto.name : 'Escolher foto'}
+              <input type="file" accept="image/*" className="hidden" onChange={e => setFoto(e.target.files?.[0] || null)} />
+            </label>
+            {(produto as any)?.foto_url && !foto && (
+              <img src={(produto as any).foto_url} alt="" className="h-10 w-10 rounded object-cover border" />
+            )}
+          </div>
+        </div>
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button type="submit">Guardar</Button>
+        <Button type="submit" disabled={uploading}>{uploading ? 'A enviar...' : 'Guardar'}</Button>
       </div>
     </form>
   );
@@ -116,15 +143,8 @@ export default function Produtos() {
     setEditProduto(undefined);
   };
 
-  const openEdit = (p: Produto) => {
-    setEditProduto(p);
-    setDialogOpen(true);
-  };
-
-  const openNew = () => {
-    setEditProduto(undefined);
-    setDialogOpen(true);
-  };
+  const openEdit = (p: Produto) => { setEditProduto(p); setDialogOpen(true); };
+  const openNew = () => { setEditProduto(undefined); setDialogOpen(true); };
 
   return (
     <div className="space-y-6">
@@ -168,6 +188,7 @@ export default function Produtos() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3">Foto</th>
                   <th className="px-4 py-3">Código</th>
                   <th className="px-4 py-3">Produto</th>
                   <th className="px-4 py-3">Categoria</th>
@@ -181,8 +202,16 @@ export default function Produtos() {
               <tbody>
                 {filtered.map(p => {
                   const lowStock = p.ativo && p.quantidade <= p.quantidade_minima;
+                  const fotoUrl = (p as any).foto_url;
                   return (
                     <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        {fotoUrl ? (
+                          <img src={fotoUrl} alt={p.nome} className="h-8 w-8 rounded object-cover border" />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded bg-muted"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-mono text-xs">{p.codigo}</td>
                       <td className="px-4 py-3 font-medium">{p.nome}</td>
                       <td className="px-4 py-3"><Badge variant="outline">{p.categoria}</Badge></td>
@@ -190,7 +219,7 @@ export default function Produtos() {
                         <span className={`font-mono font-semibold ${lowStock ? 'text-destructive' : ''}`}>{p.quantidade}</span>
                       </td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">{p.quantidade_minima}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{p.localizacao}</td>
+                      <td className="px-4 py-3 text-muted-foreground max-w-[150px] truncate">{p.localizacao}</td>
                       <td className="px-4 py-3">
                         {!p.ativo ? (
                           <Badge variant="secondary">Inativo</Badge>
@@ -209,7 +238,7 @@ export default function Produtos() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={isAdmin ? 8 : 7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado</td></tr>
+                  <tr><td colSpan={isAdmin ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado</td></tr>
                 )}
               </tbody>
             </table>

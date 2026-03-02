@@ -95,6 +95,19 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     }
 
+    // Send email notification (fire and forget)
+    supabase.functions.invoke('notify-movement', {
+      body: {
+        tipo: m.tipo,
+        produto_nome: produto.nome,
+        quantidade: m.quantidade,
+        responsavel: m.responsavel,
+        departamento: m.departamento,
+        motivo: m.motivo,
+        responsavel_recebeu: (m as any).responsavel_recebeu || null,
+      },
+    }).catch(() => {}); // Don't block on notification failure
+
     await fetchData();
   };
 

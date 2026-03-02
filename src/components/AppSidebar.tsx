@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2 } from 'lucide-react';
 import { useStock } from '@/contexts/StockContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/produtos', icon: Package, label: 'Produtos' },
   { to: '/movimentacoes', icon: ArrowLeftRight, label: 'Movimentações' },
   { to: '/historico', icon: History, label: 'Histórico' },
+  { to: '/departamentos', icon: Building2, label: 'Departamentos' },
 ];
 
 export default function AppSidebar() {

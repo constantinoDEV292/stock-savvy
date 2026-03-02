@@ -49,6 +49,24 @@ export type Database = {
           },
         ]
       }
+      departamentos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       movimentacoes: {
         Row: {
           created_at: string
@@ -60,6 +78,7 @@ export type Database = {
           produto_id: string
           quantidade: number
           responsavel: string
+          responsavel_recebeu: string | null
           tipo: string
         }
         Insert: {
@@ -72,6 +91,7 @@ export type Database = {
           produto_id: string
           quantidade: number
           responsavel: string
+          responsavel_recebeu?: string | null
           tipo: string
         }
         Update: {
@@ -84,6 +104,7 @@ export type Database = {
           produto_id?: string
           quantidade?: number
           responsavel?: string
+          responsavel_recebeu?: string | null
           tipo?: string
         }
         Relationships: [
@@ -102,6 +123,7 @@ export type Database = {
           categoria: string
           codigo: string
           created_at: string
+          foto_url: string | null
           id: string
           localizacao: string
           nome: string
@@ -115,6 +137,7 @@ export type Database = {
           categoria: string
           codigo: string
           created_at?: string
+          foto_url?: string | null
           id?: string
           localizacao?: string
           nome: string
@@ -128,6 +151,7 @@ export type Database = {
           categoria?: string
           codigo?: string
           created_at?: string
+          foto_url?: string | null
           id?: string
           localizacao?: string
           nome?: string
