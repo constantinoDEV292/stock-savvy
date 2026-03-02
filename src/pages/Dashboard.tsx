@@ -12,8 +12,6 @@ export default function Dashboard() {
   const saidas = movimentacoes.filter(m => m.tipo === 'saida');
 
   const chartData = [
-    { mes: 'Jan', entradas: 12, saidas: 8 },
-    { mes: 'Fev', entradas: 15, saidas: 11 },
     { mes: 'Mar', entradas: entradas.length, saidas: saidas.length },
   ];
 
