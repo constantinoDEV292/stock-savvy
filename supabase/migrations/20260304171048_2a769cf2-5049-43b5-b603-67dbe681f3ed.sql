@@ -1,0 +1,2 @@
+ALTER TABLE public.produtos DROP CONSTRAINT IF EXISTS produtos_categoria_check;
+ALTER TABLE public.produtos ADD CONSTRAINT produtos_categoria_check CHECK (categoria IN ('Equipamento', 'Material', 'Peça', 'Alimento', 'Outros'));
