@@ -86,13 +86,26 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .eq('id', m.produto_id);
     if (prodError) throw prodError;
 
-    // Check low stock alert
+    // Check low stock alert and notify
     if (novaQtd <= produto.quantidade_minima) {
       await supabase.from('alertas').insert({
         produto_id: produto.id,
         tipo_alerta: 'stock_baixo',
         mensagem: `Stock atual (${novaQtd}) abaixo do mínimo (${produto.quantidade_minima})`,
       });
+
+      // Send Telegram alert for low stock
+      supabase.functions.invoke('notify-movement', {
+        body: {
+          tipo: 'stock_baixo',
+          produto_nome: produto.nome,
+          quantidade: novaQtd,
+          quantidade_minima: produto.quantidade_minima,
+          responsavel: m.responsavel,
+          departamento: m.departamento,
+          motivo: m.motivo,
+        },
+      }).catch(() => {});
     }
 
     // Send email notification (fire and forget)
