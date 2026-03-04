@@ -64,6 +64,7 @@ export default function Historico() {
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Qtd</th>
                   <th className="px-4 py-3">Responsável</th>
+                  <th className="px-4 py-3">Recebeu</th>
                   <th className="px-4 py-3">Departamento</th>
                   <th className="px-4 py-3">Motivo</th>
                 </tr>
@@ -82,12 +83,13 @@ export default function Historico() {
                     </td>
                     <td className="px-4 py-3 font-mono font-semibold">{m.quantidade}</td>
                     <td className="px-4 py-3">{m.responsavel}</td>
+                    <td className="px-4 py-3">{m.responsavel_recebeu || '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">{m.departamento}</td>
                     <td className="px-4 py-3 text-muted-foreground">{m.motivo}</td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhuma movimentação encontrada</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Nenhuma movimentação encontrada</td></tr>
                 )}
               </tbody>
             </table>
