@@ -6,7 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Search, FileDown, FileSpreadsheet } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Search, FileDown, FileSpreadsheet, CalendarIcon, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { pt } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -19,7 +24,8 @@ export default function Historico() {
   const [tipoFilter, setTipoFilter] = useState<string>('all');
   const [deptFilter, setDeptFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const produtoNomes = Object.fromEntries(produtos.map(p => [p.id, p.nome]));
   const departamentos = [...new Set(movimentacoes.map(m => m.departamento))];
 
@@ -30,9 +36,12 @@ export default function Historico() {
         m.responsavel.toLowerCase().includes(search.toLowerCase());
       const matchTipo = tipoFilter === 'all' || m.tipo === tipoFilter;
       const matchDept = deptFilter === 'all' || m.departamento === deptFilter;
-      return matchSearch && matchTipo && matchDept;
+      const mDate = new Date(m.created_at);
+      const matchDateFrom = !dateFrom || mDate >= dateFrom;
+      const matchDateTo = !dateTo || mDate <= new Date(dateTo.getTime() + 86400000 - 1);
+      return matchSearch && matchTipo && matchDept && matchDateFrom && matchDateTo;
     });
-  }, [movimentacoes, produtoNomes, search, tipoFilter, deptFilter]);
+  }, [movimentacoes, produtoNomes, search, tipoFilter, deptFilter, dateFrom, dateTo]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -133,6 +142,36 @@ export default function Historico() {
             {departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Data início'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setCurrentPage(1); }} initialFocus className="p-3 pointer-events-auto" locale={pt} />
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Data fim'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setCurrentPage(1); }} initialFocus className="p-3 pointer-events-auto" locale={pt} />
+          </PopoverContent>
+        </Popover>
+
+        {(dateFrom || dateTo) && (
+          <Button variant="ghost" size="icon" onClick={() => { setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); }}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <Card className="industrial-shadow">
