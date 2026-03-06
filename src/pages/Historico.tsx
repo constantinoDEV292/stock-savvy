@@ -24,7 +24,8 @@ export default function Historico() {
   const [tipoFilter, setTipoFilter] = useState<string>('all');
   const [deptFilter, setDeptFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const produtoNomes = Object.fromEntries(produtos.map(p => [p.id, p.nome]));
   const departamentos = [...new Set(movimentacoes.map(m => m.departamento))];
 
