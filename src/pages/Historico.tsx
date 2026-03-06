@@ -172,6 +172,7 @@ export default function Historico() {
             <X className="h-4 w-4" />
           </Button>
         )}
+      </div>
 
       <Card className="industrial-shadow">
         <CardContent className="p-0">
