@@ -1,139 +1,445 @@
+import { useState, useMemo } from 'react';
 import { useStock } from '@/contexts/StockContext';
-import { Package, ArrowDownRight, ArrowUpRight, AlertTriangle, TrendingUp } from 'lucide-react';
+import {
+  Package,
+  ArrowDownRight,
+  ArrowUpRight,
+  AlertTriangle,
+  TrendingDown,
+  BarChart3,
+  Clock,
+  RefreshCw,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Button } from '@/components/ui/button';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { format, subDays, startOfDay, isToday, isAfter } from 'date-fns';
+import { pt } from 'date-fns/locale';
+
+type TimeFilter = 'today' | '7d' | '30d' | 'year';
 
 export default function Dashboard() {
-  const { produtos, movimentacoes, produtosStockBaixo, totalItens, loading } = useStock();
+  const { produtos, movimentacoes, produtosStockBaixo, loading } = useStock();
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('7d');
 
-  const produtosAtivos = produtos.filter(p => p.ativo);
-  const entradas = movimentacoes.filter(m => m.tipo === 'entrada');
-  const saidas = movimentacoes.filter(m => m.tipo === 'saida');
+  const produtosAtivos = produtos.filter((p) => p.ativo);
 
-  const chartData = [
-    { mes: 'Mar', entradas: entradas.length, saidas: saidas.length },
+  // Movimentações de hoje
+  const movHoje = movimentacoes.filter((m) => isToday(new Date(m.created_at)));
+
+  // Valor total placeholder (sem campo preço, usamos quantidade total)
+  const totalItens = produtosAtivos.reduce((s, p) => s + p.quantidade, 0);
+
+  // ---------- Filtro de período ----------
+  const filterStart = useMemo(() => {
+    const now = new Date();
+    switch (timeFilter) {
+      case 'today':
+        return startOfDay(now);
+      case '7d':
+        return startOfDay(subDays(now, 7));
+      case '30d':
+        return startOfDay(subDays(now, 30));
+      case 'year':
+        return startOfDay(subDays(now, 365));
+    }
+  }, [timeFilter]);
+
+  const filteredMov = useMemo(
+    () => movimentacoes.filter((m) => isAfter(new Date(m.created_at), filterStart)),
+    [movimentacoes, filterStart],
+  );
+
+  // ---------- Gráfico de consumo (linha) ----------
+  const consumptionData = useMemo(() => {
+    const saidas = filteredMov.filter((m) => m.tipo === 'saida');
+    const buckets: Record<string, number> = {};
+
+    saidas.forEach((m) => {
+      const key = format(new Date(m.created_at), 'dd/MM', { locale: pt });
+      buckets[key] = (buckets[key] || 0) + m.quantidade;
+    });
+
+    return Object.entries(buckets)
+      .map(([dia, qtd]) => ({ dia, qtd }))
+      .slice(-15); // últimos 15 pontos
+  }, [filteredMov]);
+
+  // ---------- Top 5 mais retirados (barras) ----------
+  const topProducts = useMemo(() => {
+    const saidas = filteredMov.filter((m) => m.tipo === 'saida');
+    const totals: Record<string, { nome: string; qtd: number }> = {};
+
+    saidas.forEach((m) => {
+      const prod = produtos.find((p) => p.id === m.produto_id);
+      const nome = prod?.nome ?? 'Desconhecido';
+      if (!totals[m.produto_id]) totals[m.produto_id] = { nome, qtd: 0 };
+      totals[m.produto_id].qtd += m.quantidade;
+    });
+
+    return Object.values(totals)
+      .sort((a, b) => b.qtd - a.qtd)
+      .slice(0, 5);
+  }, [filteredMov, produtos]);
+
+  // Lookup
+  const produtoNomes = Object.fromEntries(produtos.map((p) => [p.id, p.nome]));
+
+  const filterButtons: { label: string; value: TimeFilter }[] = [
+    { label: 'Hoje', value: 'today' },
+    { label: '7 dias', value: '7d' },
+    { label: '30 dias', value: '30d' },
+    { label: 'Este ano', value: 'year' },
   ];
-
-  const kpis = [
-    { label: 'Produtos Cadastrados', value: produtosAtivos.length, icon: Package, color: 'text-primary' },
-    { label: 'Total em Stock', value: totalItens, icon: TrendingUp, color: 'text-success' },
-    { label: 'Entradas (mês)', value: entradas.length, icon: ArrowUpRight, color: 'text-success' },
-    { label: 'Saídas (mês)', value: saidas.length, icon: ArrowDownRight, color: 'text-warning' },
-  ];
-
-  // Build a lookup for product names
-  const produtoNomes = Object.fromEntries(produtos.map(p => [p.id, p.nome]));
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">A carregar...</p></div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw className="mr-2 h-5 w-5 animate-spin text-primary" />
+        <p className="text-muted-foreground">A carregar dashboard...</p>
+      </div>
+    );
   }
+
+  const kpis = [
+    {
+      label: 'Total de Produtos',
+      value: produtosAtivos.length,
+      icon: Package,
+      gradient: 'from-primary/10 to-primary/5',
+      iconBg: 'bg-primary/15 text-primary',
+      desc: 'Produtos cadastrados',
+    },
+    {
+      label: 'Stock Baixo',
+      value: produtosStockBaixo.length,
+      icon: AlertTriangle,
+      gradient: 'from-destructive/10 to-destructive/5',
+      iconBg: 'bg-destructive/15 text-destructive',
+      desc: 'Abaixo do mínimo',
+    },
+    {
+      label: 'Movimentações Hoje',
+      value: movHoje.length,
+      icon: Clock,
+      gradient: 'from-warning/10 to-warning/5',
+      iconBg: 'bg-warning/15 text-warning',
+      desc: 'Entradas e saídas',
+    },
+    {
+      label: 'Itens em Stock',
+      value: totalItens.toLocaleString('pt-PT'),
+      icon: BarChart3,
+      gradient: 'from-success/10 to-success/5',
+      iconBg: 'bg-success/15 text-success',
+      desc: 'Unidades totais',
+    },
+  ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral do stock da fábrica</p>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Visão geral do stock — Stock Savvy
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map(kpi => (
-          <Card key={kpi.label} className="industrial-shadow">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map((kpi) => (
+          <Card
+            key={kpi.label}
+            className={`relative overflow-hidden border-0 bg-gradient-to-br ${kpi.gradient} shadow-sm transition-shadow hover:shadow-md`}
+          >
             <CardContent className="flex items-center gap-4 p-5">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-lg bg-muted ${kpi.color}`}>
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${kpi.iconBg}`}
+              >
                 <kpi.icon className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{kpi.value}</p>
-                <p className="text-xs text-muted-foreground">{kpi.label}</p>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tracking-tight">{kpi.value}</p>
+                <p className="truncate text-xs font-medium text-muted-foreground">
+                  {kpi.desc}
+                </p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="industrial-shadow lg:col-span-2">
+      {/* Time filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Período:</span>
+        {filterButtons.map((f) => (
+          <Button
+            key={f.value}
+            size="sm"
+            variant={timeFilter === f.value ? 'default' : 'outline'}
+            className="h-7 rounded-full px-3 text-xs"
+            onClick={() => setTimeFilter(f.value)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        {/* Consumption line chart */}
+        <Card className="border shadow-sm lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Movimentações Mensais</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <TrendingDown className="h-4 w-4 text-primary" />
+              Consumo de Stock
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
-                  <Bar dataKey="entradas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="Entradas" />
-                  <Bar dataKey="saidas" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} name="Saídas" />
-                </BarChart>
-              </ResponsiveContainer>
+              {consumptionData.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Sem dados de saída neste período
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={consumptionData}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      dataKey="dia"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: 12,
+                      }}
+                      formatter={(v: number) => [`${v} un.`, 'Saídas']}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="qtd"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: 'hsl(var(--primary))' }}
+                      activeDot={{ r: 5 }}
+                      name="Saídas"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="industrial-shadow">
+        {/* Top 5 bar chart */}
+        <Card className="border shadow-sm lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              Stock Baixo
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <BarChart3 className="h-4 w-4 text-warning" />
+              Top 5 Mais Retirados
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {produtosStockBaixo.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum alerta</p>
-            ) : (
-              produtosStockBaixo.map(p => (
-                <div key={p.id} className="flex items-center justify-between rounded-lg border border-warning/20 bg-warning/5 px-3 py-2.5">
-                  <div>
-                    <p className="text-sm font-medium">{p.nome}</p>
-                    <p className="font-mono text-xs text-muted-foreground">{p.codigo}</p>
-                  </div>
-                  <Badge variant="destructive" className="text-xs">{p.quantidade}/{p.quantidade_minima}</Badge>
+          <CardContent>
+            <div className="h-64">
+              {topProducts.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Sem dados neste período
                 </div>
-              ))
-            )}
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topProducts} layout="vertical">
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="nome"
+                      width={100}
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: 12,
+                      }}
+                      formatter={(v: number) => [`${v} un.`, 'Retirado']}
+                    />
+                    <Bar
+                      dataKey="qtd"
+                      fill="hsl(var(--warning))"
+                      radius={[0, 4, 4, 0]}
+                      name="Quantidade"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="industrial-shadow">
+      {/* Low stock table */}
+      <Card className="border shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Últimas Movimentações</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Produtos com Stock Baixo
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
+                <tr className="border-b text-left text-xs font-medium text-muted-foreground">
                   <th className="pb-2 pr-4">Produto</th>
-                  <th className="pb-2 pr-4">Tipo</th>
-                  <th className="pb-2 pr-4">Qtd</th>
-                  <th className="pb-2 pr-4">Responsável</th>
-                  <th className="pb-2 pr-4">Dept.</th>
-                  <th className="pb-2">Data</th>
+                  <th className="pb-2 pr-4">Código</th>
+                  <th className="pb-2 pr-4 text-right">Qtd. Atual</th>
+                  <th className="pb-2 pr-4 text-right">Mínimo</th>
+                  <th className="pb-2 text-center">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {movimentacoes.slice(0, 10).map(m => (
-                  <tr key={m.id} className="border-b last:border-0">
-                    <td className="py-2.5 pr-4 font-medium">{produtoNomes[m.produto_id] ?? '—'}</td>
+                {produtosStockBaixo.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      ✅ Todos os produtos acima do stock mínimo
+                    </td>
+                  </tr>
+                ) : (
+                  produtosStockBaixo.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b last:border-0 hover:bg-muted/40 transition-colors"
+                    >
+                      <td className="py-2.5 pr-4 font-medium">{p.nome}</td>
+                      <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground">
+                        {p.codigo}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono font-semibold text-destructive">
+                        {p.quantidade}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono">
+                        {p.quantidade_minima}
+                      </td>
+                      <td className="py-2.5 text-center">
+                        <Badge variant="destructive" className="text-[10px]">
+                          Crítico
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Latest movements */}
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            Últimas Movimentações
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs font-medium text-muted-foreground">
+                  <th className="pb-2 pr-4">Data / Hora</th>
+                  <th className="pb-2 pr-4">Produto</th>
+                  <th className="pb-2 pr-4">Tipo</th>
+                  <th className="pb-2 pr-4 text-right">Qtd</th>
+                  <th className="pb-2 pr-4">Responsável</th>
+                  <th className="pb-2">Dept.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movimentacoes.slice(0, 10).map((m) => (
+                  <tr
+                    key={m.id}
+                    className="border-b last:border-0 hover:bg-muted/40 transition-colors"
+                  >
+                    <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground">
+                      {format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', {
+                        locale: pt,
+                      })}
+                    </td>
+                    <td className="py-2.5 pr-4 font-medium">
+                      {produtoNomes[m.produto_id] ?? '—'}
+                    </td>
                     <td className="py-2.5 pr-4">
-                      <Badge variant={m.tipo === 'entrada' ? 'default' : 'secondary'} className={m.tipo === 'entrada' ? 'bg-success text-success-foreground' : 'bg-warning/15 text-warning'}>
-                        {m.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                      <Badge
+                        variant={m.tipo === 'entrada' ? 'default' : 'secondary'}
+                        className={
+                          m.tipo === 'entrada'
+                            ? 'bg-success/15 text-success border-0'
+                            : 'bg-warning/15 text-warning border-0'
+                        }
+                      >
+                        {m.tipo === 'entrada' ? (
+                          <ArrowUpRight className="mr-1 h-3 w-3" />
+                        ) : (
+                          <ArrowDownRight className="mr-1 h-3 w-3" />
+                        )}
+                        {m.tipo === 'entrada' ? 'Entrada' : 'Saída'}
                       </Badge>
                     </td>
-                    <td className="py-2.5 pr-4 font-mono">{m.quantidade}</td>
+                    <td className="py-2.5 pr-4 text-right font-mono">
+                      {m.quantidade}
+                    </td>
                     <td className="py-2.5 pr-4">{m.responsavel}</td>
-                    <td className="py-2.5 pr-4 text-muted-foreground">{m.departamento}</td>
-                    <td className="py-2.5 font-mono text-xs text-muted-foreground">
-                      {new Date(m.created_at).toLocaleDateString('pt-PT')}
+                    <td className="py-2.5 text-muted-foreground">
+                      {m.departamento}
                     </td>
                   </tr>
                 ))}
                 {movimentacoes.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhuma movimentação registada</td></tr>
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      Nenhuma movimentação registada
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
