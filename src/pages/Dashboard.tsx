@@ -116,7 +116,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {movimentacoes.slice(0, 8).map(m => (
+                {movimentacoes.slice(0, 10).map(m => (
                   <tr key={m.id} className="border-b last:border-0">
                     <td className="py-2.5 pr-4 font-medium">{produtoNomes[m.produto_id] ?? '—'}</td>
                     <td className="py-2.5 pr-4">
