@@ -36,9 +36,12 @@ export default function Historico() {
         m.responsavel.toLowerCase().includes(search.toLowerCase());
       const matchTipo = tipoFilter === 'all' || m.tipo === tipoFilter;
       const matchDept = deptFilter === 'all' || m.departamento === deptFilter;
-      return matchSearch && matchTipo && matchDept;
+      const mDate = new Date(m.created_at);
+      const matchDateFrom = !dateFrom || mDate >= dateFrom;
+      const matchDateTo = !dateTo || mDate <= new Date(dateTo.getTime() + 86400000 - 1);
+      return matchSearch && matchTipo && matchDept && matchDateFrom && matchDateTo;
     });
-  }, [movimentacoes, produtoNomes, search, tipoFilter, deptFilter]);
+  }, [movimentacoes, produtoNomes, search, tipoFilter, deptFilter, dateFrom, dateTo]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
