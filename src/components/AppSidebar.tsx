@@ -1,8 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2 } from 'lucide-react';
 import { useStock } from '@/contexts/StockContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/hooks/use-theme';
+
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -18,7 +18,7 @@ export default function AppSidebar() {
   const location = useLocation();
   const { produtosStockBaixo } = useStock();
   const { signOut, role, profileName, user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  
 
   const initials = profileName
     ? profileName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -59,16 +59,6 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      {/* Theme toggle */}
-      <div className="mx-3 mb-2">
-        <button
-          onClick={toggleTheme}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-150"
-        >
-          {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-          {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-        </button>
-      </div>
 
       {/* Alert badge */}
       {produtosStockBaixo.length > 0 && (
