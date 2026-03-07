@@ -18,6 +18,7 @@ export default function AppSidebar() {
   const location = useLocation();
   const { produtosStockBaixo } = useStock();
   const { signOut, role, profileName, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const initials = profileName
     ? profileName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
