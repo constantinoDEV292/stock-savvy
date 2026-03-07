@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2 } from 'lucide-react';
 import { useStock } from '@/contexts/StockContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/use-theme';
