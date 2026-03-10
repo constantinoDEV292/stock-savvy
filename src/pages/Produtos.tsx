@@ -88,7 +88,7 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Observações</Label>
           <Textarea value={form.observacoes} onChange={e => setForm(p => ({ ...p, observacoes: e.target.value }))} rows={2} />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Foto do Produto (opcional)</Label>
           <div className="flex items-center gap-3 mt-1">
             <label className="flex items-center gap-2 cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors">
