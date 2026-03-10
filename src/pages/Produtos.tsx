@@ -80,7 +80,7 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Quantidade Mínima</Label>
           <Input type="number" min={0} value={form.quantidade_minima} onChange={e => setForm(p => ({ ...p, quantidade_minima: Number(e.target.value) }))} />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Localização</Label>
           <Textarea value={form.localizacao} onChange={e => setForm(p => ({ ...p, localizacao: e.target.value }))} rows={2} placeholder="Descreva a localização do produto..." />
         </div>
