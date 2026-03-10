@@ -54,20 +54,20 @@ export default function Departamentos() {
   if (loading) return <div className="py-20 text-center text-muted-foreground">A carregar...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Departamentos / Áreas</h1>
-        <p className="text-sm text-muted-foreground">Gerir departamentos disponíveis nas movimentações</p>
+        <h1 className="text-xl sm:text-2xl font-bold">Departamentos / Áreas</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Gerir departamentos disponíveis nas movimentações</p>
       </div>
 
       {isAdmin && (
-        <form onSubmit={handleAdd} className="flex gap-3 max-w-md">
-          <Input placeholder="Nome do departamento..." value={novo} onChange={e => setNovo(e.target.value)} required />
-          <Button type="submit"><Plus className="mr-2 h-4 w-4" />Adicionar</Button>
+        <form onSubmit={handleAdd} className="flex gap-3 w-full sm:max-w-md">
+          <Input placeholder="Nome do departamento..." value={novo} onChange={e => setNovo(e.target.value)} required className="flex-1" />
+          <Button type="submit" size="sm" className="shrink-0"><Plus className="mr-1.5 h-4 w-4" />Adicionar</Button>
         </form>
       )}
 
-      <Card className="industrial-shadow max-w-md">
+      <Card className="industrial-shadow sm:max-w-md">
         <CardContent className="p-0">
           <ul className="divide-y">
             {departamentos.map(d => (

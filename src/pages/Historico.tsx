@@ -43,12 +43,10 @@ export default function Historico() {
     });
   }, [movimentacoes, produtoNomes, search, tipoFilter, deptFilter, dateFrom, dateTo]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedData = filtered.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
 
-  // Reset page when filters change
   const handleSearch = (val: string) => { setSearch(val); setCurrentPage(1); };
   const handleTipoFilter = (val: string) => { setTipoFilter(val); setCurrentPage(1); };
   const handleDeptFilter = (val: string) => { setDeptFilter(val); setCurrentPage(1); };
@@ -74,7 +72,6 @@ export default function Historico() {
     doc.text('Histórico de Movimentações', 14, 18);
     doc.setFontSize(9);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-PT')}`, 14, 25);
-
     const rows = getExportRows();
     autoTable(doc, {
       startY: 30,
@@ -83,7 +80,6 @@ export default function Historico() {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] },
     });
-
     doc.save('historico-movimentacoes.pdf');
   };
 
@@ -106,29 +102,31 @@ export default function Historico() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Histórico</h1>
-          <p className="text-sm text-muted-foreground">Registo completo de movimentações</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Histórico</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Registo completo de movimentações</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportPDF}>
+          <Button variant="outline" size="sm" onClick={exportPDF} className="flex-1 sm:flex-none">
             <FileDown className="h-4 w-4 mr-1.5" />PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={exportXLSX}>
+          <Button variant="outline" size="sm" onClick={exportXLSX} className="flex-1 sm:flex-none">
             <FileSpreadsheet className="h-4 w-4 mr-1.5" />Excel
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3">
+        <div className="relative sm:col-span-2 lg:flex-1 lg:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Pesquisar produto ou responsável..." className="pl-9" value={search} onChange={e => handleSearch(e.target.value)} />
         </div>
         <Select value={tipoFilter} onValueChange={handleTipoFilter}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-full lg:w-36"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="entrada">Entradas</SelectItem>
@@ -136,7 +134,7 @@ export default function Historico() {
           </SelectContent>
         </Select>
         <Select value={deptFilter} onValueChange={handleDeptFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Departamento" /></SelectTrigger>
+          <SelectTrigger className="w-full lg:w-44"><SelectValue placeholder="Departamento" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             {departamentos.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
@@ -145,7 +143,7 @@ export default function Historico() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+            <Button variant="outline" className={cn("w-full lg:w-40 justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
               <CalendarIcon className="mr-2 h-4 w-4" />
               {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Data início'}
             </Button>
@@ -157,7 +155,7 @@ export default function Historico() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+            <Button variant="outline" className={cn("w-full lg:w-40 justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
               <CalendarIcon className="mr-2 h-4 w-4" />
               {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Data fim'}
             </Button>
@@ -168,13 +166,41 @@ export default function Historico() {
         </Popover>
 
         {(dateFrom || dateTo) && (
-          <Button variant="ghost" size="icon" onClick={() => { setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); }}>
+          <Button variant="ghost" size="icon" onClick={() => { setDateFrom(undefined); setDateTo(undefined); setCurrentPage(1); }} className="shrink-0">
             <X className="h-4 w-4" />
           </Button>
         )}
       </div>
 
-      <Card className="industrial-shadow">
+      {/* Mobile card list */}
+      <div className="space-y-2 sm:hidden">
+        {paginatedData.map(m => (
+          <Card key={m.id} className="industrial-shadow">
+            <CardContent className="p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium truncate">{produtoNomes[m.produto_id] ?? '—'}</span>
+                <Badge variant={m.tipo === 'entrada' ? 'default' : 'secondary'} className={m.tipo === 'entrada' ? 'bg-success text-success-foreground text-[10px]' : 'bg-warning/15 text-warning text-[10px]'}>
+                  {m.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                <span>Data: <span className="font-mono text-foreground">{new Date(m.created_at).toLocaleDateString('pt-PT')}</span></span>
+                <span>Qtd: <span className="font-mono font-semibold text-foreground">{m.quantidade}</span></span>
+                <span className="truncate">Resp: {m.responsavel}</span>
+                <span className="truncate">Dept: {m.departamento}</span>
+                {m.responsavel_recebeu && <span className="col-span-2 truncate">Recebeu: {m.responsavel_recebeu}</span>}
+                <span className="col-span-2 truncate">Motivo: {m.motivo}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {filtered.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma movimentação encontrada</p>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="industrial-shadow hidden sm:block">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -193,9 +219,7 @@ export default function Historico() {
               <tbody>
                 {paginatedData.map(m => (
                   <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDate(m.created_at)}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{formatDate(m.created_at)}</td>
                     <td className="px-4 py-3 font-medium">{produtoNomes[m.produto_id] ?? '—'}</td>
                     <td className="px-4 py-3">
                       <Badge variant={m.tipo === 'entrada' ? 'default' : 'secondary'} className={m.tipo === 'entrada' ? 'bg-success text-success-foreground' : 'bg-warning/15 text-warning'}>
@@ -218,8 +242,9 @@ export default function Historico() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">{filtered.length} movimentação(ões) encontrada(s) — Página {safeCurrentPage} de {totalPages}</p>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{filtered.length} movimentação(ões) — Página {safeCurrentPage}/{totalPages}</p>
         {totalPages > 1 && (
           <Pagination>
             <PaginationContent>
@@ -231,11 +256,7 @@ export default function Historico() {
               </PaginationItem>
               {renderPageNumbers().map(page => (
                 <PaginationItem key={page}>
-                  <PaginationLink
-                    isActive={page === safeCurrentPage}
-                    onClick={() => setCurrentPage(page)}
-                    className="cursor-pointer"
-                  >
+                  <PaginationLink isActive={page === safeCurrentPage} onClick={() => setCurrentPage(page)} className="cursor-pointer">
                     {page}
                   </PaginationLink>
                 </PaginationItem>

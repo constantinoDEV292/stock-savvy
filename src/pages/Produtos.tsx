@@ -147,18 +147,18 @@ export default function Produtos() {
   const openNew = () => { setEditProduto(undefined); setDialogOpen(true); };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Produtos</h1>
-          <p className="text-sm text-muted-foreground">Gestão de equipamentos e materiais</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Produtos</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Gestão de equipamentos e materiais</p>
         </div>
         {isAdmin && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Novo Produto</Button>
+              <Button onClick={openNew} size="sm" className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Novo Produto</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editProduto ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
               </DialogHeader>
@@ -174,7 +174,7 @@ export default function Produtos() {
           <Input placeholder="Pesquisar por nome ou código..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={catFilter} onValueChange={setCatFilter}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas</SelectItem>
             {categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -182,7 +182,56 @@ export default function Produtos() {
         </Select>
       </div>
 
-      <Card className="industrial-shadow">
+      {/* Mobile card list */}
+      <div className="space-y-3 sm:hidden">
+        {filtered.map(p => {
+          const lowStock = p.ativo && p.quantidade <= p.quantidade_minima;
+          const fotoUrl = (p as any).foto_url;
+          return (
+            <Card key={p.id} className="industrial-shadow">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-3">
+                  {fotoUrl ? (
+                    <img src={fotoUrl} alt={p.nome} className="h-12 w-12 rounded-lg object-cover border shrink-0" />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted"><ImageIcon className="h-5 w-5 text-muted-foreground" /></div>
+                  )}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{p.nome}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">{p.codigo}</p>
+                      </div>
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{p.categoria}</Badge>
+                      {!p.ativo ? (
+                        <Badge variant="secondary" className="text-[10px]">Inativo</Badge>
+                      ) : lowStock ? (
+                        <Badge variant="destructive" className="text-[10px] animate-pulse-warning">Stock Baixo</Badge>
+                      ) : (
+                        <Badge className="bg-success text-success-foreground text-[10px]">Normal</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Stock: <span className={`font-mono font-semibold ${lowStock ? 'text-destructive' : 'text-foreground'}`}>{p.quantidade}</span> / Mín: <span className="font-mono">{p.quantidade_minima}</span></span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+        {filtered.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">Nenhum produto encontrado</p>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="industrial-shadow hidden sm:block">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

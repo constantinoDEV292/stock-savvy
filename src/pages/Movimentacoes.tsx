@@ -41,12 +41,8 @@ export default function Movimentacoes() {
     try {
       const motivo = saidaForm.motivo === 'Outro' ? saidaForm.motivo_outro : saidaForm.motivo;
       await addMovimentacao({
-        produto_id: saidaForm.produto_id,
-        tipo: 'saida',
-        quantidade: saidaForm.quantidade,
-        responsavel: saidaForm.responsavel,
-        departamento: saidaForm.departamento,
-        motivo,
+        produto_id: saidaForm.produto_id, tipo: 'saida', quantidade: saidaForm.quantidade,
+        responsavel: saidaForm.responsavel, departamento: saidaForm.departamento, motivo,
         responsavel_recebeu: saidaForm.responsavel_recebeu || null,
       });
       toast({ title: '✅ Saída registada', description: `${saidaForm.quantidade}x ${produto.nome}` });
@@ -64,14 +60,9 @@ export default function Movimentacoes() {
     setSubmitting(true);
     try {
       await addMovimentacao({
-        produto_id: entradaForm.produto_id,
-        tipo: 'entrada',
-        quantidade: entradaForm.quantidade,
-        responsavel: entradaForm.responsavel,
-        departamento: entradaForm.departamento,
-        motivo: 'Reposição',
-        fornecedor: entradaForm.fornecedor || null,
-        nota: entradaForm.nota || null,
+        produto_id: entradaForm.produto_id, tipo: 'entrada', quantidade: entradaForm.quantidade,
+        responsavel: entradaForm.responsavel, departamento: entradaForm.departamento, motivo: 'Reposição',
+        fornecedor: entradaForm.fornecedor || null, nota: entradaForm.nota || null,
         responsavel_recebeu: entradaForm.responsavel_recebeu || null,
       });
       toast({ title: '✅ Entrada registada', description: `${entradaForm.quantidade}x ${produto.nome}` });
@@ -85,33 +76,29 @@ export default function Movimentacoes() {
   const selectedSaidaProduto = produtosAtivos.find(p => p.id === saidaForm.produto_id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Movimentações</h1>
-        <p className="text-sm text-muted-foreground">Registar entradas e saídas de material</p>
+        <h1 className="text-xl sm:text-2xl font-bold">Movimentações</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Registar entradas e saídas de material</p>
       </div>
 
       <Tabs defaultValue="saida" className="w-full">
-        <TabsList className="w-full max-w-md">
-          <TabsTrigger value="saida" className="flex-1 gap-2"><ArrowDownRight className="h-4 w-4" />Saída</TabsTrigger>
-          <TabsTrigger value="entrada" className="flex-1 gap-2"><ArrowUpRight className="h-4 w-4" />Entrada</TabsTrigger>
+        <TabsList className="w-full">
+          <TabsTrigger value="saida" className="flex-1 gap-1.5 text-xs sm:text-sm"><ArrowDownRight className="h-4 w-4" />Saída</TabsTrigger>
+          <TabsTrigger value="entrada" className="flex-1 gap-1.5 text-xs sm:text-sm"><ArrowUpRight className="h-4 w-4" />Entrada</TabsTrigger>
         </TabsList>
 
         <TabsContent value="saida">
-          <Card className="industrial-shadow max-w-2xl">
-            <CardHeader><CardTitle className="text-lg">📤 Registo de Saída</CardTitle></CardHeader>
-            <CardContent>
+          <Card className="industrial-shadow">
+            <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg">📤 Registo de Saída</CardTitle></CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
               <form onSubmit={handleSaida} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <Label>Produto</Label>
                     <Select value={saidaForm.produto_id} onValueChange={v => setSaidaForm(p => ({ ...p, produto_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
-                      <SelectContent>
-                        {produtosAtivos.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome} ({p.codigo}) — Stock: {p.quantidade}</SelectItem>
-                        ))}
-                      </SelectContent>
+                      <SelectContent>{produtosAtivos.map(p => <SelectItem key={p.id} value={p.id}>{p.nome} ({p.codigo}) — Stock: {p.quantidade}</SelectItem>)}</SelectContent>
                     </Select>
                     {selectedSaidaProduto && (
                       <p className="mt-1 text-xs text-muted-foreground">Stock disponível: <span className="font-mono font-semibold">{selectedSaidaProduto.quantidade}</span></p>
@@ -144,7 +131,7 @@ export default function Movimentacoes() {
                     </Select>
                   </div>
                   {saidaForm.motivo === 'Outro' && (
-                   <div className="sm:col-span-2">
+                    <div className="sm:col-span-2">
                       <Label>Especifique o motivo</Label>
                       <Input value={saidaForm.motivo_outro} onChange={e => setSaidaForm(p => ({ ...p, motivo_outro: e.target.value }))} required placeholder="Descreva o motivo..." />
                     </div>
@@ -159,20 +146,16 @@ export default function Movimentacoes() {
         </TabsContent>
 
         <TabsContent value="entrada">
-          <Card className="industrial-shadow max-w-2xl">
-            <CardHeader><CardTitle className="text-lg">📥 Registo de Entrada</CardTitle></CardHeader>
-            <CardContent>
+          <Card className="industrial-shadow">
+            <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg">📥 Registo de Entrada</CardTitle></CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
               <form onSubmit={handleEntrada} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <Label>Produto</Label>
                     <Select value={entradaForm.produto_id} onValueChange={v => setEntradaForm(p => ({ ...p, produto_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
-                      <SelectContent>
-                        {produtosAtivos.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome} ({p.codigo})</SelectItem>
-                        ))}
-                      </SelectContent>
+                      <SelectContent>{produtosAtivos.map(p => <SelectItem key={p.id} value={p.id}>{p.nome} ({p.codigo})</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
