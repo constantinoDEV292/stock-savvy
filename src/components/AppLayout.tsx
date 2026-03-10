@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useStock } from '@/contexts/StockContext';
 import AppSidebar from '@/components/AppSidebar';
 
 export default function AppLayout() {
