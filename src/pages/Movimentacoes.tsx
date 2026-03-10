@@ -102,8 +102,8 @@ export default function Movimentacoes() {
             <CardHeader><CardTitle className="text-lg">📤 Registo de Saída</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleSaida} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
                     <Label>Produto</Label>
                     <Select value={saidaForm.produto_id} onValueChange={v => setSaidaForm(p => ({ ...p, produto_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
@@ -144,7 +144,7 @@ export default function Movimentacoes() {
                     </Select>
                   </div>
                   {saidaForm.motivo === 'Outro' && (
-                    <div className="col-span-2">
+                   <div className="sm:col-span-2">
                       <Label>Especifique o motivo</Label>
                       <Input value={saidaForm.motivo_outro} onChange={e => setSaidaForm(p => ({ ...p, motivo_outro: e.target.value }))} required placeholder="Descreva o motivo..." />
                     </div>
@@ -163,8 +163,8 @@ export default function Movimentacoes() {
             <CardHeader><CardTitle className="text-lg">📥 Registo de Entrada</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleEntrada} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
                     <Label>Produto</Label>
                     <Select value={entradaForm.produto_id} onValueChange={v => setEntradaForm(p => ({ ...p, produto_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>

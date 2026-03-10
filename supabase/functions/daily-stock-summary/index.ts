@@ -25,18 +25,26 @@ serve(async (req) => {
 
     if (prodError) throw prodError;
 
-    // Fetch today's movements
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const { data: movHoje, error: movError } = await supabase
+    // Fetch YESTERDAY's movements (not today's)
+    const now = new Date();
+    const yesterdayStart = new Date(now);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    yesterdayStart.setHours(0, 0, 0, 0);
+
+    const yesterdayEnd = new Date(now);
+    yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+    yesterdayEnd.setHours(23, 59, 59, 999);
+
+    const { data: movOntem, error: movError } = await supabase
       .from('movimentacoes')
       .select('*')
-      .gte('created_at', today.toISOString());
+      .gte('created_at', yesterdayStart.toISOString())
+      .lte('created_at', yesterdayEnd.toISOString());
 
     if (movError) throw movError;
 
-    const entradasHoje = movHoje?.filter(m => m.tipo === 'entrada') || [];
-    const saidasHoje = movHoje?.filter(m => m.tipo === 'saida') || [];
+    const entradasOntem = movOntem?.filter(m => m.tipo === 'entrada') || [];
+    const saidasOntem = movOntem?.filter(m => m.tipo === 'saida') || [];
 
     const totalProdutos = produtos?.length || 0;
     const totalStock = produtos?.reduce((sum: number, p: any) => sum + p.quantidade, 0) || 0;
@@ -51,7 +59,14 @@ serve(async (req) => {
       stockBaixoList = '  ✅ Nenhum produto abaixo do mínimo';
     }
 
-    const dataFormatada = new Date().toLocaleDateString('pt-PT', {
+    const dataOntem = yesterdayStart.toLocaleDateString('pt-PT', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    const dataHoje = now.toLocaleDateString('pt-PT', {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
@@ -59,14 +74,15 @@ serve(async (req) => {
     });
 
     const message = `📊 RESUMO DIÁRIO DE STOCK
-📅 ${dataFormatada}
+📅 Relatório de ${dataOntem}
+📆 Enviado em ${dataHoje}
 
 ━━━━━━━━━━━━━━━━━━━━
 📦 Produtos ativos: ${totalProdutos}
 📈 Total em stock: ${totalStock} itens
 
-📥 Entradas hoje: ${entradasHoje.length}
-📤 Saídas hoje: ${saidasHoje.length}
+📥 Entradas ontem: ${entradasOntem.length}
+📤 Saídas ontem: ${saidasOntem.length}
 
 🔴 STOCK BAIXO (${stockBaixo.length}):
 ${stockBaixoList}

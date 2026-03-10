@@ -56,8 +56,8 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sm:col-span-2">
           <Label>Nome do Produto</Label>
           <Input value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} required />
         </div>
@@ -80,15 +80,15 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Quantidade Mínima</Label>
           <Input type="number" min={0} value={form.quantidade_minima} onChange={e => setForm(p => ({ ...p, quantidade_minima: Number(e.target.value) }))} />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Localização</Label>
           <Textarea value={form.localizacao} onChange={e => setForm(p => ({ ...p, localizacao: e.target.value }))} rows={2} placeholder="Descreva a localização do produto..." />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Observações</Label>
           <Textarea value={form.observacoes} onChange={e => setForm(p => ({ ...p, observacoes: e.target.value }))} rows={2} />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Foto do Produto (opcional)</Label>
           <div className="flex items-center gap-3 mt-1">
             <label className="flex items-center gap-2 cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors">
@@ -148,7 +148,7 @@ export default function Produtos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Produtos</h1>
           <p className="text-sm text-muted-foreground">Gestão de equipamentos e materiais</p>
@@ -168,8 +168,8 @@ export default function Produtos() {
         )}
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Pesquisar por nome ou código..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>

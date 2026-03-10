@@ -1,17 +1,50 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
+import { useIsMobile } from '@/hooks/use-mobile';
 import AppSidebar from '@/components/AppSidebar';
 
 export default function AppLayout() {
   const { theme, toggleTheme } = useTheme();
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <main className="ml-64 min-h-screen">
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={
+          isMobile
+            ? `fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : ''
+        }
+      >
+        <AppSidebar onNavigate={() => isMobile && setSidebarOpen(false)} />
+      </div>
+
+      {/* Main */}
+      <main className={isMobile ? 'min-h-screen' : 'ml-64 min-h-screen'}>
         {/* Top bar */}
-        <div className="flex h-14 items-center justify-end border-b border-border px-6">
+        <div className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
+          {isMobile ? (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          ) : (
+            <div />
+          )}
           <button
             onClick={toggleTheme}
             className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -20,7 +53,7 @@ export default function AppLayout() {
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
         </div>
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           <Outlet />
         </div>
       </main>
