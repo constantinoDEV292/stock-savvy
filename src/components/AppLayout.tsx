@@ -3,12 +3,14 @@ import { Outlet } from 'react-router-dom';
 import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useStock } from '@/contexts/StockContext';
 import AppSidebar from '@/components/AppSidebar';
 
 export default function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { produtosStockBaixo } = useStock();
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,9 +40,14 @@ export default function AppLayout() {
           {isMobile ? (
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="relative rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {!sidebarOpen && produtosStockBaixo.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                  {produtosStockBaixo.length}
+                </span>
+              )}
             </button>
           ) : (
             <div />
