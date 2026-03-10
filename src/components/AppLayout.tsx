@@ -10,6 +10,7 @@ export default function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { produtosStockBaixo } = useStock();
 
   return (
     <div className="min-h-screen bg-background">
