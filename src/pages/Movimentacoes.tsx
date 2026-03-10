@@ -102,8 +102,8 @@ export default function Movimentacoes() {
             <CardHeader><CardTitle className="text-lg">📤 Registo de Saída</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleSaida} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
                     <Label>Produto</Label>
                     <Select value={saidaForm.produto_id} onValueChange={v => setSaidaForm(p => ({ ...p, produto_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
