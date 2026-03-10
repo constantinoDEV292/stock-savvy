@@ -84,7 +84,7 @@ function ProdutoForm({ produto, onSave, onClose }: { produto?: Produto; onSave: 
           <Label>Localização</Label>
           <Textarea value={form.localizacao} onChange={e => setForm(p => ({ ...p, localizacao: e.target.value }))} rows={2} placeholder="Descreva a localização do produto..." />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Observações</Label>
           <Textarea value={form.observacoes} onChange={e => setForm(p => ({ ...p, observacoes: e.target.value }))} rows={2} />
         </div>
