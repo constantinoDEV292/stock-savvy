@@ -144,7 +144,7 @@ export default function Movimentacoes() {
                     </Select>
                   </div>
                   {saidaForm.motivo === 'Outro' && (
-                    <div className="col-span-2">
+                   <div className="sm:col-span-2">
                       <Label>Especifique o motivo</Label>
                       <Input value={saidaForm.motivo_outro} onChange={e => setSaidaForm(p => ({ ...p, motivo_outro: e.target.value }))} required placeholder="Descreva o motivo..." />
                     </div>
