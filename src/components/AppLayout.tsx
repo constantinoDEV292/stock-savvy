@@ -27,7 +27,7 @@ export default function AppLayout() {
         className={
           isMobile
             ? `fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-            : ''
+            : 'fixed inset-y-0 left-0 z-30 w-64'
         }
       >
         <AppSidebar onNavigate={() => isMobile && setSidebarOpen(false)} />
