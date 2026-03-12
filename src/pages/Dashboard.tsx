@@ -101,11 +101,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">Visão geral do stock</p>
-      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
