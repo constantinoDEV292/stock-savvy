@@ -36,23 +36,23 @@ export default function AppLayout() {
       {/* Main */}
       <main className={isMobile ? 'min-h-screen' : 'ml-64 min-h-screen'}>
         <div className="p-4 sm:p-6 lg:p-8">
-          {/* Floating controls */}
+          {/* Top bar with menu/title and theme toggle */}
           <div className="flex items-center justify-between mb-4">
-            {isMobile ? (
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="relative rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                {!sidebarOpen && produtosStockBaixo.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {produtosStockBaixo.length}
-                  </span>
-                )}
-              </button>
-            ) : (
-              <div />
-            )}
+            <div className="flex items-center gap-3">
+              {isMobile && (
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="relative rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                  {!sidebarOpen && produtosStockBaixo.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                      {produtosStockBaixo.length}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
             <button
               onClick={toggleTheme}
               className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
