@@ -35,7 +35,7 @@ export default function AppLayout() {
 
       {/* Main */}
       <main className={isMobile ? 'min-h-screen' : 'ml-64 min-h-screen'}>
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="px-4 sm:px-6 lg:px-8 pt-2 pb-4 sm:pb-6 lg:pb-8">
           {/* Top bar with menu/title and theme toggle */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
