@@ -54,31 +54,10 @@ serve(async (req) => {
       status_envio: 'pendente',
     });
 
-    // Send Telegram notification
-    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
-
-    if (botToken && chatId) {
-      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-      const res = await fetch(telegramUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: 'HTML',
-        }),
-      });
-
-      const result = await res.json();
-      console.log('Telegram response:', JSON.stringify(result));
-
-      if (!result.ok) {
-        console.error('Telegram error:', result.description);
-      }
-    } else {
-      console.warn('TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured');
-    }
+    // Telegram notifications paused
+    // const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    // const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
+    console.log('Telegram notifications are currently paused');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
