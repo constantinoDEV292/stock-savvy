@@ -100,19 +100,33 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border bg-accent/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Painel em tempo real
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Visão geral do stock e movimentações da fábrica</p>
+        </div>
+        <p className="text-[11px] font-mono text-muted-foreground">
+          Atualizado · {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: pt })}
+        </p>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className={`relative overflow-hidden border-0 bg-gradient-to-br ${kpi.gradient} shadow-sm`}>
+          <Card key={kpi.label} className={`relative overflow-hidden border bg-gradient-to-br ${kpi.gradient} shadow-soft hover:shadow-md transition-shadow`}>
             <CardContent className="flex items-center gap-3 p-3 sm:p-5">
-              <div className={`flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl ${kpi.iconBg}`}>
-                <kpi.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <div className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl ${kpi.iconBg}`}>
+                <kpi.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
+                <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
                 <p className="text-lg sm:text-2xl font-bold tracking-tight">{kpi.value}</p>
-                <p className="truncate text-[10px] sm:text-xs font-medium text-muted-foreground">{kpi.desc}</p>
               </div>
             </CardContent>
           </Card>
