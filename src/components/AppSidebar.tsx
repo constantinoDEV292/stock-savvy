@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2 } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, History, AlertTriangle, LogOut, Building2, Sprout } from 'lucide-react';
 import { useStock } from '@/contexts/StockContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -30,12 +30,12 @@ export default function AppSidebar({ onNavigate }: AppSidebarProps) {
     <aside className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-          <Package className="h-5 w-5 text-sidebar-primary-foreground" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-corn shadow-glow">
+          <Sprout className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-wide text-sidebar-accent-foreground">STOCKFLOW</h1>
-          <p className="text-[10px] uppercase tracking-widest text-sidebar-muted">Gestão de Stock</p>
+          <h1 className="text-base font-bold tracking-tight text-sidebar-accent-foreground">KiandaStock</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-sidebar-muted">Gestão Inteligente</p>
         </div>
       </div>
 
