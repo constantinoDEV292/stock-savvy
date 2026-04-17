@@ -38,7 +38,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [prodRes, movRes] = await Promise.all([
       supabase.from('produtos').select('*').order('created_at', { ascending: false }),
-      supabase.from('movimentacoes').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('movimentacoes').select('*').order('created_at', { ascending: false }).limit(5000),
     ]);
 
     if (prodRes.data) setProdutos(prodRes.data);
